@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const apiClient = axios.create({
-  baseURL: "http://localhost:8080",
+  baseURL: "https://finance-tracker-backend-jt1h.onrender.com",
 });
 
 let unauthorizedHandler = null;
@@ -32,7 +32,7 @@ apiClient.interceptors.response.use(
     const isAuthRequest =
       requestUrl.includes("/auth/login") || requestUrl.includes("/auth/register");
 
-    if (status === 401 && !isAuthRequest && !isHandlingUnauthorized) {
+      if ((status === 401 || status === 403) && !isAuthRequest && !isHandlingUnauthorized) {
       isHandlingUnauthorized = true;
 
       localStorage.removeItem("token");
