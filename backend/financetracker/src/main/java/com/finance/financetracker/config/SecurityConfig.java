@@ -13,6 +13,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.*;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -39,41 +42,54 @@ public class SecurityConfig {
         return config.getAuthenticationManager();
     }
 
-    // 🔐 Main security config
+    // 🔥 MAIN SECURITY CONFIG
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                // 🔥 ENABLE CORS (VERY IMPORTANT)
-                .cors(cors -> {})
-
-                // 🔥 DISABLE CSRF
+                .cors(cors -> {}) // ✅ enable CORS
                 .csrf(csrf -> csrf.disable())
 
-                // 🔥 Disable default auth
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
 
                 .authorizeHttpRequests(auth -> auth
-
-                        // 🔥 ALLOW PREFLIGHT REQUESTS (CRITICAL FIX)
+                        // 🔥 Allow preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // Public APIs
+                        // Public endpoints
                         .requestMatchers("/auth/login", "/auth/register").permitAll()
 
                         // Secure everything else
                         .anyRequest().authenticated()
                 )
 
-                // 🔥 Stateless session (JWT)
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
 
-        // 🔥 JWT filter
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    // 🔥 CORS CONFIG (FINAL FIX)
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "https://finance-tracker-chi-amber.vercel.app"
+        ));
+
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+
+        return source;
     }
 }
